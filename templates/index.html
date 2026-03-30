@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Extração</title>
+<meta name="author" content="Igor">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{ 
+    margin:0;
+    padding:0; 
+    box-sizing:border-box; 
+    font-family: Arial, Helvetica, sans-serif; 
+}
+
+body{ 
+    height:100vh; 
+    display:flex; 
+    justify-content:center; 
+    align-items:center; 
+    background:#c7d1e4; 
+}
+
+.container{ 
+    width:900px; 
+    min-height:500px; 
+    background:white; 
+    border-radius:20px; 
+    display:flex; 
+    box-shadow:0 10px 25px rgba(0,0,0,0.1); 
+}
+
+.left{ 
+    width:45%; 
+    background: linear-gradient(to bottom, #6c8fd8 0%, #2c3e70 50%, #000000 100%);
+    border-top-left-radius:20px; 
+    border-bottom-left-radius:20px; 
+    border-top-right-radius:120px; 
+    border-bottom-right-radius:120px; 
+    color:white; display:flex; 
+    flex-direction:column; 
+    justify-content:center; 
+    align-items:center; 
+    text-align:center; 
+    padding:40px 20px;
+}
+
+.left h1{ 
+    font-size:32px; 
+    margin-bottom:10px; 
+}
+
+.left button{
+    padding:8px 20px; 
+    border-radius:25px; 
+    border:2px solid white; 
+    background:transparent; 
+    color:white; font-weight:bold; 
+    cursor:pointer; 
+    transition:background 0.2s; 
+}
+
+.left button:hover{ 
+    background:rgba(255,255,255,0.15); 
+}
+
+.right{ 
+    width:55%; padding:50px 60px; 
+    display:flex; 
+    flex-direction:column; 
+    justify-content:center; 
+}
+
+.right h2{ 
+    text-align:center; 
+    margin-bottom:25px; 
+}
+
+.input-group input[type="file"]{
+    width:100%;
+    padding:9px;
+    border:none;
+    background:#e8e9ec;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:13px;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 0 #b5c3e6;
+}
+
+.input-group input[type="file"]:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.input-group label{ 
+    display:block; 
+    font-size:12px; color:#fffcfc;
+    margin-bottom:4px; 
+    margin-left:4px; 
+}
+
+.file-info{ 
+    font-size:11px; 
+    color:#ffffff; 
+    margin-top:4px; 
+    margin-left:4px; 
+    min-height:16px; 
+}
+
+.login-btn{ 
+    width:100%; 
+    padding:12px; 
+    border:none; 
+    border-radius:8px;
+    background:#6c8fd8;
+    color:white; 
+    font-weight:bold;
+    cursor:pointer; 
+    transition:background 0.2s, opacity 0.2s;
+    margin-top:5px;
+}
+
+.login-btn:hover:not(:disabled){
+    background:#5a7ec6; 
+}
+
+.login-btn:disabled{ 
+    opacity:0.6; 
+    cursor:not-allowed;
+}
+
+#resultado{ 
+    margin-top:15px; 
+    text-align:center; 
+    font-size:14px; 
+    min-height:20px; 
+    line-height:1.5; 
+}
+
+#btnExtrair span {
+    display: inline-block; 
+    margin-left: 9px;
+    width: 0;
+    overflow: hidden;
+    transition: width 0.5s; 
+}
+
+#btnExtrair:hover span { 
+    width: 20px;
+}
+
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="left">
+        <h1>Seu PDV funcionando</h1>
+        <h1>Sempre</h1>
+        <button onclick="alert('Vamos começar!')">Começar</button>
+    </div>
+
+    <div class="right">
+
+        <h2>Extração de XML</h2>
+
+        <div class="input-group">
+            <label>Pasta completa (inclui subpastas)</label>
+            <input type="file" id="folderInput" webkitdirectory multiple>
+            <span class="file-info" id="fileInfo"></span>
+        </div>
+        <br>
+        <button class="login-btn" id="btnExtrair" onclick="extrair()">Extrair<span>&#10230;</span></button>
+
+        <p id="resultado"></p>
+
+    </div>
+
+</div>
+
+
+<script>
+document.getElementById("folderInput").addEventListener("change", function() {
+    const files = Array.from(this.files);
+    const total = files.length;
+    const xmls  = files.filter(f => f.name.toLowerCase().endsWith(".xml")).length;
+    const info  = document.getElementById("fileInfo");
+
+    if (total === 0) {
+        info.innerText = "";
+        return;
+    }
+
+    const pastaRaiz = files[0].webkitRelativePath.split("/")[0];
+    info.innerText = `${total} arquivo(s) encontrado(s) — ${xmls} XML(s)  |  Pasta: ${pastaRaiz}`;
+});
+
+async function extrair() {
+    const files     = document.getElementById("folderInput").files;
+    const resultado = document.getElementById("resultado");
+    const btn       = document.getElementById("btnExtrair");
+
+    if (files.length === 0) {
+        resultado.innerText = "Selecione uma pasta!";
+        resultado.style.color = "orange";
+        return;
+    }
+
+    const xmlFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith(".xml"));
+
+    if (xmlFiles.length === 0) {
+        resultado.innerText = "Nenhum arquivo XML encontrado na pasta!";
+        resultado.style.color = "orange";
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Processando...";
+    resultado.innerText = "Aguarde...";
+    resultado.style.color = "#555";
+
+    try {
+        const zip = new JSZip();
+
+        for (const file of xmlFiles) {
+            const conteudo = await file.arrayBuffer();
+            zip.file(file.name, conteudo);
+        }
+
+        const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+
+        // Cria link temporário e dispara o download direto para Downloads
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href     = url;
+        link.download = "resultado.zip";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        resultado.innerText = `${xmlFiles.length} XML(s) extraído(s) com sucesso! O arquivo foi salvo na sua pasta Downloads.`;
+        resultado.style.color = "green";
+
+    } catch (error) {
+        resultado.innerText = "Erro: " + error.message;
+        resultado.style.color = "red";
+        console.error(error);
+
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Extrair";
+    }
+}
+</script>
+</body>
+</html>
